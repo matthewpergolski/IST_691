@@ -1,0 +1,22 @@
+# ignore
+/.venv
+/config/*
+/scripts/__pycache__
+/scripts/archive
+/test.py
+/scripts/app.sh
+/data/*
+
+# Exclude wavfiles
+!/data/wavfiles/
+
+# Ignore everything in wavfiles
+/data/wavfiles/*
+
+# Re-include specific data files
+!/data/wavfiles/269166-1.wav
+!/data/wavfiles/172752-0.wav
+!/data/wavfiles/103060-7.wav
+!/data/wavfiles/483884-8.wav
+!/data/wavfiles/20420-0.wav
+!/data/bird_songs_metadata.csv
