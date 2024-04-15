@@ -9,16 +9,25 @@ from streamlit_tensorboard import st_tensorboard
 from tensorboard import program
 import json
 import os
+import socket
 
-# Define the project root directory
+# Project root directory
 PROJECT_ROOT = os.getcwd()
 
-# Function to start TensorBoard
+# Find an available port
+def find_free_port():
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(('', 0))  # Bind to a free port provided by the host.
+        return s.getsockname()[1]  # Return the port number assigned.
+
+# Start TensorBoard using an available port
 def start_tensorboard(logdir):
+    port = find_free_port()
     tb = program.TensorBoard()
-    tb.configure(argv=[None, '--logdir', logdir, '--port', '6008'])
+    tb.configure(argv=[None, '--logdir', logdir, '--port', str(port)])
     url = tb.launch()
     return url
+
 
 ################################## Overview Page ##################################
 
@@ -89,14 +98,11 @@ if choice == "Model Training":
     st.title("Model Training")
     
     # Specify the logdir for TensorBoard and start it
-    # logdir = f"{paths['runs_dir']}"
-    # st_tensorboard(logdir=logdir, port=6008, width=1500)
-
     if 'tensorboard_url' not in st.session_state:
         logdir = f"{paths['runs_dir']}"
         st.session_state.tensorboard_url = start_tensorboard(logdir)
     
-    st.components.v1.iframe(st.session_state.tensorboard_url, height=800, width=1500)  # Adjust dimensions as necessary
+    st.components.v1.iframe(st.session_state.tensorboard_url, height=800, width=1500)
 
 
 ################################## Model Inference ##################################
