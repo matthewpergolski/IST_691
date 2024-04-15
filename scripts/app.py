@@ -76,11 +76,11 @@ if choice == "Exploratory Data Analysis (EDA)":
     st.plotly_chart(class_dist_fig, use_container_width=True)
 
     # Display samples
-    sample_data = bird_dataset.display_samples_streamlit(num_samples=1)
+    sample_data = bird_dataset.display_samples_streamlit_deployed(data_paths, num_samples=5)
     for data in sample_data:
-        st.markdown(data['label_info'])
+        #st.markdown(data['label_info'])
         st.plotly_chart(data['fig'], use_container_width=True)
-        st.audio(data['audio'])
+        st.audio(data['audio'], format='audio/wav')
 
 
 ################################## Model Training ##################################

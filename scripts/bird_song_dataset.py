@@ -158,20 +158,46 @@ class BirdSongDataset(Dataset):
             fig.show()
             display(Audio(sample['audio_path']))
             print(f"\n{'-'*80}\n")
-
-    def display_samples_streamlit(self, num_samples=1):
+    
+    def display_samples_streamlit_deployed(self, data_paths, num_samples=1):
         """
-        Display a specified number of bird song examples, with labels,
-        spectrograms, and audio players. Intended for Streamlit.
+        Display a specified number of bird song examples from predefined audio paths,
+        with labels, spectrograms, and audio players. Intended for Streamlit.
         """
-        samples = self.sample_n_examples_per_class(num_samples)
+        # Assuming file_names includes the audio files already linked with labels in some way
+        file_names = ["12577-9.wav", "111653-8.wav", "103060-7.wav", "413128-5.wav", "20420-0.wav"]
+        audio_paths = [os.path.join(data_paths.get_paths()['wav_files_dir'], name) for name in file_names]
+        
+        # If you have a mapping of filenames to labels:
+        label_map = {   # Hypothetical example; replace with your actual data source
+            "12577-9.wav": "Bewick's Wren",
+            "111653-8.wav": "Song Sparrow",
+            "103060-7.wav": "American Robin",
+            "413128-5.wav": "Northern Mockingbird",
+            "20420-0.wav": "Northern Cardinal"
+        }
+        
+        # Randomly select num_samples from the list
+        selected_audio_paths = random.sample(audio_paths, num_samples)
+        
         sample_data = []
-        for i, sample in enumerate(samples):
-            spectrogram_fig = self.visualize_spectrogram_plotly(sample['spectrogram'], sample['label_string'], sr=22050)
-            audio_clip = sample['audio_path']
-            label_info = f"Example {i+1}: Label - {sample['label_string']} ({sample['label']})"
-            sample_data.append({'fig': spectrogram_fig, 'audio': audio_clip, 'label_info': label_info})
+        for i, audio_path in enumerate(selected_audio_paths):
+            filename = os.path.basename(audio_path)
+            label = label_map.get(filename, "Unknown")
+            
+            # Load and compute the spectrogram
+            audio, sr = librosa.load(audio_path, sr=None)
+            spectrogram = librosa.feature.melspectrogram(y=audio, sr=sr)
+            spectrogram_db = librosa.power_to_db(spectrogram, ref=np.max)
+            spectrogram_tensor = torch.from_numpy(spectrogram_db).unsqueeze(0)
+            
+            spectrogram_fig = self.visualize_spectrogram_plotly(spectrogram_tensor, label, sr=sr)
+            label_info = f"Example {i+1}: Label - {label}"
+            
+            sample_data.append({'fig': spectrogram_fig, 'audio': audio_path, 'label_info': label_info})
+        
         return sample_data
+
      
 def main():
     # Get dynamic paths
@@ -196,7 +222,9 @@ def main():
     samples = dataset.sample_n_examples_per_class(1)
     for i, sample in enumerate(samples):
         print(f"Example {i+1}: Label - {sample['label_string']} ({sample['label']})")
-        
+        print(f"Audio Path: {sample['audio_path']}")  # Print the audio path
+
+
         # Visualize the spectrogram
         spectrogram_fig = dataset.visualize_spectrogram_plotly(sample['spectrogram'], sample['label_string'], sr=22050)
         spectrogram_fig.show()

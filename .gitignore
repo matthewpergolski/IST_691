@@ -14,9 +14,10 @@
 /data/wavfiles/*
 
 # Re-include specific data files
-!/data/wavfiles/269166-1.wav
-!/data/wavfiles/172752-0.wav
+!/data/wavfiles/12577-9.wav
+!/data/wavfiles/111653-8.wav
 !/data/wavfiles/103060-7.wav
-!/data/wavfiles/483884-8.wav
+!/data/wavfiles/413128-5.wav
 !/data/wavfiles/20420-0.wav
 !/data/bird_songs_metadata.csv
+!/config/download_kaggle_dataset.sh
