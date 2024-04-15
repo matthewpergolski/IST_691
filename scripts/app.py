@@ -4,29 +4,13 @@ import numpy as np
 import pickle
 from bird_song_dataset import BirdSongDataset, DataPaths
 import librosa
-import plotly.express as px
-from streamlit_tensorboard import st_tensorboard
+import plotly.graph_objs as go
+import matplotlib.pyplot as plt
+from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 from tensorboard import program
 import json
 import os
 import socket
-
-# Project root directory
-PROJECT_ROOT = os.getcwd()
-
-# Find an available port
-def find_free_port():
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind(('', 0))  # Bind to a free port provided by the host.
-        return s.getsockname()[1]  # Return the port number assigned.
-
-# Start TensorBoard using an available port
-def start_tensorboard(logdir):
-    port = find_free_port()
-    tb = program.TensorBoard()
-    tb.configure(argv=[None, '--logdir', logdir, '--port', str(port)])
-    url = tb.launch()
-    return url
 
 
 ################################## Overview Page ##################################
@@ -97,13 +81,85 @@ if choice == "Exploratory Data Analysis (EDA)":
 if choice == "Model Training":
     st.title("Model Training")
     
-    # Specify the logdir for TensorBoard and start it
-    if 'tensorboard_url' not in st.session_state:
-        logdir = f"{paths['runs_dir']}"
-        st.session_state.tensorboard_url = start_tensorboard(logdir)
+    # Define a simple list of colors for the plots.
+    colors = [
+        "#1f77b4",  # Muted blue
+        "#ff7f0e",  # Safety orange
+        "#2ca02c",  # Cooked asparagus green
+        "#d62728",  # Brick red
+        "#9467bd",  # Muted purple
+        "#8c564b",  # Chestnut brown
+        "#e377c2",  # Raspberry yogurt pink
+        "#7f7f7f",  # Middle gray
+        "#bcbd22",  # Curry yellow-green
+        "#17becf"   # Blue-teal
+    ]
     
-    st.components.v1.iframe(st.session_state.tensorboard_url, height=800, width=1500)
+    # Function to fetch scalar data from Tensorboard event files
+    def fetch_scalar_data(event_acc, tag):
+        scalar_events = event_acc.Scalars(tag)
+        steps, values = zip(*[(s.step, s.value) for s in scalar_events])
+        return steps, values
 
+    # Function to add traces to a Plotly figure for scalar data
+    def add_scalar_trace(fig, steps, values, run_name, tag, color_index):
+        fig.add_trace(
+            go.Scatter(
+                x=steps, 
+                y=values, 
+                mode='lines+markers', 
+                name=f'{run_name} - {tag}', 
+                line=dict(color=colors[color_index % len(colors)])  # Cycle through colors list
+            )
+        )
+
+    # Function to initialize a Plotly figure
+    def initialize_scalar_plot(title):
+        fig = go.Figure()
+        fig.update_layout(title=title, xaxis_title='Step', yaxis_title='Value')
+        return fig
+
+    # Function to plot data from all event files with color differentiation
+    def load_and_plot_all_runs_data(runs_dir):
+        train_fig = initialize_scalar_plot("Training Loss")
+        val_fig = initialize_scalar_plot("Validation Loss")
+        lr_fig = initialize_scalar_plot("Learning Rate")
+
+        run_paths = [os.path.join(runs_dir, run) for run in os.listdir(runs_dir)]
+        run_paths = [run for run in run_paths if os.path.isdir(run)]
+
+        for idx, logdir in enumerate(run_paths):
+            event_acc = EventAccumulator(logdir, size_guidance={'scalars': 0})
+            event_acc.Reload()
+
+            # Use index in colors list for the current run
+            color_index = idx 
+
+            try:
+                train_steps, train_values = fetch_scalar_data(event_acc, 'Loss/train')
+                add_scalar_trace(train_fig, train_steps, train_values, os.path.basename(logdir), 'Training Loss', color_index)
+            except KeyError:
+                st.warning(f'{os.path.basename(logdir)}: Training loss data not found.')
+
+            try:
+                val_steps, val_values = fetch_scalar_data(event_acc, 'Loss/validation')
+                add_scalar_trace(val_fig, val_steps, val_values, os.path.basename(logdir), 'Validation Loss', color_index)
+            except KeyError:
+                st.warning(f'{os.path.basename(logdir)}: Validation loss data not found.')
+
+            try:
+                lr_steps, lr_values = fetch_scalar_data(event_acc, 'Learning Rate')
+                add_scalar_trace(lr_fig, lr_steps, lr_values, os.path.basename(logdir), 'Learning Rate', color_index)
+            except KeyError:
+                # Plotting default learning rate if not found
+                default_lr = [0.001] * len(train_steps)  # Match the number of training steps
+                add_scalar_trace(lr_fig, train_steps, default_lr, os.path.basename(logdir), 'Learning Rate (default)', color_index)
+
+        st.plotly_chart(train_fig, use_container_width=True)
+        st.plotly_chart(val_fig, use_container_width=True)
+        st.plotly_chart(lr_fig, use_container_width=True)
+
+    load_and_plot_all_runs_data(paths['runs_dir'])
 
 ################################## Model Inference ##################################
 
