@@ -21,7 +21,7 @@ Access the Streamlit app here: [https://ist691-syracuse.streamlit.app](https://i
 ![Streamlit Landing Page](./pictures/landing_page.png)
 ![Streamlit Search Engine](./pictures/eda.png)
 ![Streamlit TI-IDF Matrix](./pictures/model_training.png)
-![Streamlit Topic Model](./pictures/model_infernece.png.png)
+![Streamlit Topic Model](./pictures/model_infernece.png)
 
 ## Getting Started
 
