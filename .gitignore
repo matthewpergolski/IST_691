@@ -6,6 +6,9 @@
 /test.py
 /scripts/app.sh
 /data/*
+/.DS_Store
+/models/.DS_Store
+/results/.DS_Store
 
 # Exclude wavfiles
 !/data/wavfiles/
